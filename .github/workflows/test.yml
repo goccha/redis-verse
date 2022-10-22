@@ -32,13 +32,13 @@ jobs:
           echo ${{ github.ref }}
           echo $BRANCH
 
-      - name: Set up Go 1.18.3
-        uses: actions/setup-go@v2
+      - name: Set up Go 1.19.2
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: 1.19.2
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run checks
         uses: golangci/golangci-lint-action@v3
