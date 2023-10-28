@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/goccha/logging/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"strings"
-	"time"
 )
 
 const (
@@ -86,11 +87,11 @@ func Setup(ctx context.Context, b Builder) error {
 
 func WaitForActivation(ctx context.Context, waitMax ...int) error {
 	ok := false
-	max := 20
+	tryMax := 20
 	if len(waitMax) > 0 {
-		max = waitMax[0]
+		tryMax = waitMax[0]
 	}
-	for i := 0; i < max; i++ {
+	for i := 0; i < tryMax; i++ {
 		if cmd := Primary().Ping(context.TODO()); cmd.Err() != nil {
 			time.Sleep(200 * time.Millisecond)
 			continue

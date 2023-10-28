@@ -2,18 +2,19 @@ package redis
 
 import (
 	"context"
+	"time"
+
 	"github.com/goccha/logging/log"
 	"github.com/goccha/problems"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func WithLock(ctx context.Context, key string, f func() error, tryMax ...int) error {
-	max := 10
+	limit := 10
 	if len(tryMax) > 0 {
-		max = tryMax[0]
+		limit = tryMax[0]
 	}
-	if err := tryLock(ctx, key, max); err != nil {
+	if err := tryLock(ctx, key, limit); err != nil {
 		return err
 	}
 	defer func() {

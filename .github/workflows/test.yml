@@ -24,14 +24,6 @@ jobs:
     timeout-minutes: 300
 
     steps:
-      # tag名を変数化
-      - name: Get the version (tag)
-        id: get_version
-        run: |
-          echo ::set-output name=BRANCH::$(echo ${{ github.ref }} | sed -e "s#refs/heads/##g")
-          echo ${{ github.ref }}
-          echo $BRANCH
-
       - name: Set up Go 1.19.2
         uses: actions/setup-go@v3
         with:
