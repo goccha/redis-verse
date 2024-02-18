@@ -2,6 +2,8 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
+
 	"github.com/goccha/envar"
 )
 
@@ -25,6 +27,12 @@ func (b *EnvBuilder) Build(ctx context.Context, db ...int) (primary *PrimaryClie
 		PrimaryHost:   host,
 		ReaderHost:    readerHost,
 	}
+	if TlsEnable() {
+		builder.TlsConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			ServerName: ServerName(),
+		}
+	}
 	return builder.Build(ctx, db...)
 }
 
@@ -35,6 +43,8 @@ type Env struct {
 	RedisReaderEndpoint  string `envar:"REDIS_READER_ENDPOINT"`
 	RedisClusterEnable   bool   `envar:"REDIS_CLUSTER_ENABLE"`
 	RedisDatabaseNumber  int    `envar:"REDIS_DATABASE_NUMBER;default=0"`
+	TlsEnable            bool   `envar:"REDIS_TLS_ENABLE"`
+	RedisServerName      string `envar:"REDIS_SERVER_NAME"`
 }
 
 func PrimaryEndpoint() string {
@@ -51,4 +61,12 @@ func ClusterEnable() bool {
 
 func DatabaseNumber() int {
 	return _env.RedisDatabaseNumber
+}
+
+func TlsEnable() bool {
+	return _env.TlsEnable
+}
+
+func ServerName() string {
+	return _env.RedisServerName
 }
