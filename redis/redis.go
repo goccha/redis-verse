@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,6 +16,7 @@ import (
 
 const (
 	DefaultHost = "localhost:6379"
+	Nil         = redis.Nil
 )
 
 func IsNil(err error) bool {
@@ -142,6 +144,7 @@ type DefaultBuilder struct {
 	ClusterEnable bool
 	PrimaryHost   string
 	ReaderHost    string
+	TlsConfig     *tls.Config
 }
 
 type PrimaryClient struct {
@@ -184,8 +187,9 @@ func (b *DefaultBuilder) Build(ctx context.Context, db ...int) (primary *Primary
 			d = db[0]
 		}
 		c := redis.NewClient(&redis.Options{
-			Addr: b.PrimaryHost,
-			DB:   d,
+			Addr:      b.PrimaryHost,
+			DB:        d,
+			TLSConfig: b.TlsConfig,
 		})
 		host, port := splitEndpoint(b.PrimaryHost)
 		c.AddHook(redisotel.NewTracingHook(redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))))
