@@ -2,10 +2,11 @@ package throttles
 
 import (
 	"context"
+	"time"
+
 	"github.com/go-redis/redis_rate/v9"
 	"github.com/goccha/logging/log"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func SetLimiter(rateLimiter *redis_rate.Limiter) {
@@ -26,10 +27,9 @@ func (e *OverflowError) Error() string {
 	return "Limit has been exceeded."
 }
 
-var ErrOverflow *OverflowError
-
 func IsOverflow(err error) bool {
-	return errors.As(err, &ErrOverflow)
+	overflow := &OverflowError{}
+	return errors.As(err, &overflow)
 }
 
 var defaultMax = 5
@@ -54,12 +54,12 @@ func try(ctx context.Context, id string, limit redis_rate.Limit) (retry bool, er
 }
 
 func LimitPer(ctx context.Context, id string, limit redis_rate.Limit, f func() error, retryMax ...int) (err error) {
-	max := defaultMax
+	maxCnt := defaultMax
 	if len(retryMax) > 0 {
-		max = retryMax[0]
+		maxCnt = retryMax[0]
 	}
 	retry := true
-	for i := 0; retry && i < max; i++ {
+	for i := 0; retry && i < maxCnt; i++ {
 		if retry, err = try(ctx, id, limit); err != nil {
 			return err
 		}
