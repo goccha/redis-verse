@@ -3,14 +3,15 @@ package throttles
 import (
 	"context"
 	"errors"
-	"github.com/go-redis/redis_rate/v9"
-	"github.com/goccha/redis-verse/redis"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis_rate/v10"
+	"github.com/goccha/redis-verse/redis"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {

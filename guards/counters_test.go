@@ -2,12 +2,13 @@ package guards
 
 import (
 	"context"
-	"github.com/goccha/redis-verse/locks"
-	"github.com/goccha/redis-verse/redis"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/goccha/redis-verse/locks"
+	"github.com/goccha/redis-verse/redis"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {

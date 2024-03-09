@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/goccha/logging/log"
 	"github.com/goccha/redis-verse/locks"
 	"github.com/goccha/redis-verse/redis"
-	"time"
 )
 
 const (
@@ -132,7 +133,7 @@ func (c *LockCounter) Fire(ctx context.Context, f func()) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if cmd := redis.Primary().SetEX(ctx, c.Key(), v, c.Expiration); cmd.Err() != nil {
+		if cmd := redis.Primary().SetEx(ctx, c.Key(), v, c.Expiration); cmd.Err() != nil {
 			return false, cmd.Err()
 		}
 	}
