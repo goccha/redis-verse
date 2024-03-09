@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/extra/redisotel/v8"
-	"github.com/go-redis/redis/v8"
 	"github.com/goccha/logging/log"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
@@ -177,7 +177,9 @@ func (b *DefaultBuilder) Build(ctx context.Context, db ...int) (primary *Primary
 			Addrs: []string{b.PrimaryHost},
 		})
 		host, port := splitEndpoint(b.PrimaryHost)
-		c.AddHook(redisotel.NewTracingHook(redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))))
+		if err = redisotel.InstrumentTracing(c, redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))); err != nil {
+			return
+		}
 		primary = &PrimaryClient{Client: c, Db: -1}
 		log.Info(ctx).Str("primary_endpoint", b.PrimaryHost).Send()
 		reader = &ReaderClient{Client: c, Db: -1}
@@ -192,7 +194,9 @@ func (b *DefaultBuilder) Build(ctx context.Context, db ...int) (primary *Primary
 			TLSConfig: b.TlsConfig,
 		})
 		host, port := splitEndpoint(b.PrimaryHost)
-		c.AddHook(redisotel.NewTracingHook(redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))))
+		if err = redisotel.InstrumentTracing(c, redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))); err != nil {
+			return
+		}
 		primary = &PrimaryClient{Client: c, Db: d}
 		log.Info(ctx).Str("primary_endpoint", b.PrimaryHost).Send()
 		if b.PrimaryHost != b.ReaderHost {
@@ -201,7 +205,9 @@ func (b *DefaultBuilder) Build(ctx context.Context, db ...int) (primary *Primary
 				DB:   d,
 			})
 			host, port = splitEndpoint(b.ReaderHost)
-			c.AddHook(redisotel.NewTracingHook(redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))))
+			if err = redisotel.InstrumentTracing(c, redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))); err != nil {
+				return
+			}
 			reader = &ReaderClient{
 				Client: c,
 				Db:     d,

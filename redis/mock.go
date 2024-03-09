@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 
-	"github.com/go-redis/redismock/v8"
+	"github.com/go-redis/redismock/v9"
 )
 
 type MockBuilder struct {
