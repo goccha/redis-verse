@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/goccha/logging/log"
-	"github.com/goccha/problems"
 	"github.com/pkg/errors"
 )
 
@@ -27,6 +26,12 @@ func WithLock(ctx context.Context, key string, f func() error, tryMax ...int) er
 
 var LockTime = 15 * time.Second
 
+type LockFailure struct{}
+
+func (err *LockFailure) Error() string {
+	return "redis: lock failure"
+}
+
 func tryLock(ctx context.Context, key string, tryMax int) error {
 	if tryMax <= 0 {
 		tryMax = 1
@@ -39,7 +44,12 @@ func tryLock(ctx context.Context, key string, tryMax int) error {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	return problems.New("").Unavailable("Processing...").Wrap()
+	return &LockFailure{}
+}
+
+func IsLockFailure(err error) bool {
+	unavailable := &LockFailure{}
+	return errors.As(err, &unavailable)
 }
 
 const Locked = "1"
