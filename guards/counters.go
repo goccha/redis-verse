@@ -2,7 +2,6 @@ package guards
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -31,12 +30,11 @@ func TimedCounter(key string, max int, expiration time.Duration, trigger Trigger
 }
 
 type LockCounter struct {
-	key         string        // ロック単位のキー文字列
-	TryMax      int           // 最大回数
-	Expiration  time.Duration // 判定対象期間
-	Trigger     Trigger
-	expirations []int64
-	locked      bool
+	key        string        // ロック単位のキー文字列
+	TryMax     int           // 最大回数
+	Expiration time.Duration // 判定対象期間
+	Trigger    Trigger
+	locked     bool
 }
 
 func (c *LockCounter) Clear(ctx context.Context) {
@@ -55,7 +53,6 @@ func (c *LockCounter) clear(ctx context.Context) {
 		log.Error(ctx).Err(cmd.Err()).Send()
 		return
 	}
-	c.expirations = []int64{}
 }
 
 func (c *LockCounter) Increment(ctx context.Context) (bool, error) {
@@ -71,32 +68,21 @@ func (c *LockCounter) Increment(ctx context.Context) (bool, error) {
 		return locked, nil
 	}
 	c.locked = false
-	c.expirations, err = c.increment(ctx)
+	err = c.increment(ctx)
 	if err != nil {
 		return false, err
 	}
 	return false, nil
 }
 
-func (c *LockCounter) increment(ctx context.Context) ([]int64, error) {
+func (c *LockCounter) increment(ctx context.Context) error {
 	now := time.Now()
-	cmd := redis.Primary().Get(ctx, c.Key())
-	if cmd.Err() != nil && !redis.IsNil(cmd.Err()) {
-		return nil, cmd.Err()
-	}
-	expirations := make([]int64, 0, c.TryMax)
-	if !redis.IsNil(cmd.Err()) {
-		if b, err := cmd.Bytes(); err != nil {
-			return nil, err
-		} else {
-			if err = json.Unmarshal(b, &expirations); err != nil {
-				return nil, err
-			}
-		}
-	}
 	exp := now.Add(c.Expiration)
-	expirations = append(expirations, exp.Unix())
-	return expirations, nil
+	cmd := redis.Primary().RPush(ctx, c.Key(), exp.Unix())
+	if cmd.Err() != nil && !redis.IsNil(cmd.Err()) {
+		return cmd.Err()
+	}
+	return nil
 }
 
 func (c *LockCounter) gc(now time.Time, expirations []int64) []int64 {
@@ -116,8 +102,13 @@ func (c *LockCounter) Fire(ctx context.Context, f func()) (bool, error) {
 	if c.locked {
 		return true, nil
 	}
-	keys := c.gc(time.Now(), c.expirations)
-	if len(keys) >= c.TryMax { // 規定回数以上に達した場合
+	v, err := gcN.Run(ctx, redis.Primary(), []string{c.Key()}).Result()
+	if err != nil {
+		return false, err
+	}
+	values := v.([]interface{})
+	cnt := values[0].(int64)
+	if int(cnt) >= c.TryMax { // 規定回数以上に達した場合
 		if err := c.Trigger.Fire(ctx); err != nil { // 対象キーをロック
 			log.Error(ctx).Err(err).Send()
 		}
@@ -128,16 +119,6 @@ func (c *LockCounter) Fire(ctx context.Context, f func()) (bool, error) {
 		c.clear(ctx)
 		return true, nil
 	}
-	if len(keys) > 0 {
-		v, err := json.Marshal(keys)
-		if err != nil {
-			return false, err
-		}
-		if cmd := redis.Primary().SetEx(ctx, c.Key(), v, c.Expiration); cmd.Err() != nil {
-			return false, cmd.Err()
-		}
-	}
 	c.locked = false
-	c.expirations = keys
 	return false, nil
 }

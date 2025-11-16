@@ -19,8 +19,7 @@ func TestMain(m *testing.M) {
 	if err := redis.WaitForActivation(ctx); err != nil {
 		os.Exit(1)
 	}
-	code := m.Run()
-	os.Exit(code)
+	m.Run()
 }
 
 func Test_UserLock(t *testing.T) {
