@@ -85,19 +85,6 @@ func (c *LockCounter) increment(ctx context.Context) error {
 	return nil
 }
 
-func (c *LockCounter) gc(now time.Time, expirations []int64) []int64 {
-	if len(expirations) >= c.TryMax {
-		result := make([]int64, 0, c.TryMax)
-		for _, v := range expirations {
-			if v > now.Unix() {
-				result = append(result, v)
-			}
-		}
-		expirations = result
-	}
-	return expirations
-}
-
 func (c *LockCounter) Fire(ctx context.Context, f func()) (bool, error) {
 	if c.locked {
 		return true, nil

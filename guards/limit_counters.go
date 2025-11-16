@@ -3,7 +3,6 @@ package guards
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/goccha/redis-verse/redis"
@@ -59,18 +58,4 @@ func (c *LimitCounter) Clear(ctx context.Context) {
 		fmt.Printf("error: %v\n", cmd.Err())
 		return
 	}
-}
-
-func (c *LimitCounter) gc(ctx context.Context) (int64, error) {
-	values := []interface{}{int64(c.Expiration.Seconds())}
-	v, err := gcN.Run(ctx, redis.Primary(), []string{c.Key()}, values...).Result()
-	if err != nil {
-		return -1, err
-	}
-	values = v.([]interface{})
-	result, err := strconv.ParseInt(values[2].(string), 10, 64)
-	if err != nil {
-		return -1, err
-	}
-	return result, nil
 }
