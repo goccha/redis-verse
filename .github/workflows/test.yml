@@ -24,20 +24,20 @@ jobs:
     timeout-minutes: 300
 
     steps:
-      - name: Set up Go 1.19.2
+      - name: Set up Go 1.25.4
         uses: actions/setup-go@v5
         with:
-          go-version: 1.19.2
+          go-version: 1.25.4
 
       - name: Check out code
         uses: actions/checkout@v4
 
       - name: Run checks
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v9
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest
-          args: --timeout=5m --go=1.18
+          args: --timeout=5m --go=1.25.4
 
           # Optional: working directory, useful for monorepos
           # working-directory: somedir
