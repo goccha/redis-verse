@@ -11,6 +11,7 @@ import (
 	"github.com/goccha/logging/log"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/maintnotifications"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 )
 
@@ -192,6 +193,9 @@ func (b *DefaultBuilder) Build(ctx context.Context, db ...int) (primary *Primary
 			Addr:      b.PrimaryHost,
 			DB:        d,
 			TLSConfig: b.TlsConfig,
+			MaintNotificationsConfig: &maintnotifications.Config{
+				Mode: maintnotifications.ModeDisabled,
+			},
 		})
 		host, port := splitEndpoint(b.PrimaryHost)
 		if err = redisotel.InstrumentTracing(c, redisotel.WithAttributes(semconv.NetPeerNameKey.String(host), semconv.NetPeerPortKey.String(port))); err != nil {
