@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/goccha/logging/log"
 	"github.com/goccha/redis-verse/redis"
 )
 
@@ -18,6 +19,16 @@ func AccessLimitCounter(key string, max int, expiration time.Duration) *LimitCou
 		TryMax:     max,
 		Expiration: expiration,
 	}
+}
+
+type ExceedLimitError struct {
+	Limit    int
+	Count    int64
+	ExpireAt int64
+}
+
+func (e *ExceedLimitError) Error() string {
+	return fmt.Sprintf("exceeded limit: limit=%d, count=%d", e.Limit, e.Count)
 }
 
 type LimitCounter struct {
@@ -38,16 +49,17 @@ func (c *LimitCounter) Increment(ctx context.Context) (int64, error) {
 		return -1, err
 	}
 	values = v.([]interface{})
-	fmt.Printf("%v\n", values)
+	log.Debug(ctx).Msgf("limit counter values: %v", values)
 	ok := values[0].(int64)
-	fmt.Printf("%v\n", ok)
 	cnt := values[1].(int64)
-	fmt.Printf("%d\n", cnt)
-	if ok == 0 {
-		return cnt, fmt.Errorf("exceeded maximum count: %d", c.TryMax)
-	}
 	expireAt := values[2].(int64)
-	fmt.Printf("expire at: %v\n", time.Unix(expireAt, 0))
+	if ok == 0 {
+		return cnt, &ExceedLimitError{
+			Limit:    c.TryMax,
+			Count:    cnt,
+			ExpireAt: expireAt,
+		}
+	}
 	c.expireAt = expireAt
 	return cnt, nil
 }
